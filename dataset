@@ -1,0 +1,23 @@
+https://www.kaggle.com/evgeniya1/city-of-houston-hurricane-harvey-damage-assessment
+
+discharge, etc:
+from: https://txpub.usgs.gov/txwaterdashboard/index.html
+
+https://nwis.waterdata.usgs.gov/usa/nwis/uv/?cb_00060=on&cb_00065=on&format=rdb&site_no=08150800&period=&begin_date=2017-07-25&end_date=2017-08-08
+
+
+USGS 08075770 Hunting Bayou at IH 610, Houston, TX
+https://nwis.waterdata.usgs.gov/usa/nwis/uv/?cb_00060=on&cb_00065=on&format=rdb&site_no=08075770&period=&begin_date=2017-08-23&end_date=2017-08-31
+
+Flood and HIgh flow conditions:
+https://waterwatch.usgs.gov/?m=wwdp2
+
+***************
+USGS 08074500 Whiteoak Bayou at Houston, TX
+Harris County, Texas
+Hydrologic Unit Code 12040104
+Latitude  29°46'30", Longitude  95°23'49" NAD27
+Drainage area 95.1  square miles
+Contributing drainage area 95.1  square miles
+Gage datum 00 feet above NAVD88
+
