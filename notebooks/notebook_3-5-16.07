@@ -1,0 +1,525 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "collapsed": true
+   },
+   "source": [
+    "# STSA Python pattern: Houston Flood data\n",
+    "\n",
+    "\n",
+    "![Hurricane Harvey](https://github.com/scottdangelo/houston-flood-2017/blob/master/doc/source/images/Harvey.png)\n",
+    "\n",
+    "NASA TERRA MODIS INFRARED IMAGE OF HARVEY AT 0419 UTC 26 AUGUST 2017 JUST AFTER LANDFALL AS A\n",
+    "CATEGORY 4 HURRICANE IN TEXAS. IMAGE COURTESY OF UW/CIMSS. g"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 1.0 Install dependencies and import packages"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### 1.1 Install pixiedust\n",
+    "\n",
+    "We install the prerequisites using the `!pip install` syntax here.\n",
+    "In some cases, running pip install from a notebook may require a one-time kernel restart. Check the output for messages.\n",
+    "If instructed to restart the kernel, from the notebook toolbar menu: • Go to > Kernel > Restart • Click Restart in the confirmation dialog\n",
+    "> Note: The status of the kernel briefly flashes near the upper right corner, alerting when it is Not Connected, Restarting, Ready, etc. "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "!pip install --upgrade pixiedust"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### 1.2 Import the packages"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Pixiedust database opened successfully\n",
+      "Table VERSION_TRACKER created successfully\n",
+      "Table METRICS_TRACKER created successfully\n",
+      "\n",
+      "Share anonymous install statistics? (opt-out instructions)\n",
+      "\n",
+      "PixieDust will record metadata on its environment the next time the package is installed or updated. The data is anonymized and aggregated to help plan for future releases, and records only the following values:\n",
+      "\n",
+      "{\n",
+      "   \"data_sent\": currentDate,\n",
+      "   \"runtime\": \"python\",\n",
+      "   \"application_version\": currentPixiedustVersion,\n",
+      "   \"space_id\": nonIdentifyingUniqueId,\n",
+      "   \"config\": {\n",
+      "       \"repository_id\": \"https://github.com/ibm-watson-data-lab/pixiedust\",\n",
+      "       \"target_runtimes\": [\"Data Science Experience\"],\n",
+      "       \"event_id\": \"web\",\n",
+      "       \"event_organizer\": \"dev-journeys\"\n",
+      "   }\n",
+      "}\n",
+      "You can opt out by calling pixiedust.optOut() in a new cell.\n"
+     ]
+    },
+    {
+     "data": {
+      "text/html": [
+       "\n",
+       "        <div style=\"margin:10px\">\n",
+       "            <a href=\"https://github.com/ibm-watson-data-lab/pixiedust\" target=\"_new\">\n",
+       "                <img src=\"https://github.com/ibm-watson-data-lab/pixiedust/raw/master/docs/_static/pd_icon32.png\" style=\"float:left;margin-right:10px\"/>\n",
+       "            </a>\n",
+       "            <span>Pixiedust version 1.1.15</span>\n",
+       "        </div>\n",
+       "        "
+      ],
+      "text/plain": [
+       "<IPython.core.display.HTML object>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "\u001b[31mPixiedust runtime updated. Please restart kernel\u001b[0m\n",
+      "Table USER_PREFERENCES created successfully\n",
+      "Table service_connections created successfully\n"
+     ]
+    }
+   ],
+   "source": [
+    "import pandas as pd\n",
+    "import pixiedust"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 2.0 Obtain and curate data"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "In order to do data science, or data engineering, we'll need some data.\n",
+    "So, what problem are we trying to solve?\n",
+    "\n",
+    "### Where in Houston does flooding occur, and which specific adresses are vulnerable?"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### 2.1 Search for data"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### 2.2 Download and examine data\n",
+    "\n",
+    "We'll use some data that has been cleaned up a bit to expedite things.\n",
+    "* Column headers have been renamed to make more sense\n",
+    "* Unimportant features (columns) have been removed\n",
+    "* Latitude and longitude have been added\n",
+    "* Location name has been added"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "--2019-03-05 20:44:48--  https://www.dropbox.com/s/hrxu2qwcsosrxf5/HuntingBayou.csv?dl=0\n",
+      "Resolving www.dropbox.com (www.dropbox.com)... 162.125.8.1, 2620:100:601b:1::a27d:801\n",
+      "Connecting to www.dropbox.com (www.dropbox.com)|162.125.8.1|:443... connected.\n",
+      "HTTP request sent, awaiting response... 301 Moved Permanently\n",
+      "Location: /s/raw/hrxu2qwcsosrxf5/HuntingBayou.csv [following]\n",
+      "--2019-03-05 20:44:48--  https://www.dropbox.com/s/raw/hrxu2qwcsosrxf5/HuntingBayou.csv\n",
+      "Reusing existing connection to www.dropbox.com:443.\n",
+      "HTTP request sent, awaiting response... 302 Found\n",
+      "Location: https://uc69c0a8644afb40c311a2eb870c.dl.dropboxusercontent.com/cd/0/inline/AcifyzavcNIwCtXVb493BGM5i8LNNmMZRtcV1iyUoWSWSmtghSSa080mp3U61Hddpkk_ONygDoRU8ZHTJyRb38B9nlZqFvB4N0jBA68YV2omQ3ad4QFIkIhT0lHlNS9K2WA/file# [following]\n",
+      "--2019-03-05 20:44:49--  https://uc69c0a8644afb40c311a2eb870c.dl.dropboxusercontent.com/cd/0/inline/AcifyzavcNIwCtXVb493BGM5i8LNNmMZRtcV1iyUoWSWSmtghSSa080mp3U61Hddpkk_ONygDoRU8ZHTJyRb38B9nlZqFvB4N0jBA68YV2omQ3ad4QFIkIhT0lHlNS9K2WA/file\n",
+      "Resolving uc69c0a8644afb40c311a2eb870c.dl.dropboxusercontent.com (uc69c0a8644afb40c311a2eb870c.dl.dropboxusercontent.com)... 162.125.6.6, 2620:100:601c:6::a27d:606\n",
+      "Connecting to uc69c0a8644afb40c311a2eb870c.dl.dropboxusercontent.com (uc69c0a8644afb40c311a2eb870c.dl.dropboxusercontent.com)|162.125.6.6|:443... connected.\n",
+      "HTTP request sent, awaiting response... 200 OK\n",
+      "Length: 59655 (58K) [text/plain]\n",
+      "Saving to: ‘HuntingBayou.csv?dl=0’\n",
+      "\n",
+      "100%[======================================>] 59,655      --.-K/s   in 0.06s   \n",
+      "\n",
+      "2019-03-05 20:44:50 (908 KB/s) - ‘HuntingBayou.csv?dl=0’ saved [59655/59655]\n",
+      "\n"
+     ]
+    }
+   ],
+   "source": [
+    "!wget 'https://www.dropbox.com/s/hrxu2qwcsosrxf5/HuntingBayou.csv?dl=0'"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "HuntingBayou.csv\r\n"
+     ]
+    }
+   ],
+   "source": [
+    "!mv HuntingBayou.csv?dl=0 HuntingBayou.csv\n",
+    "!ls"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "--2019-03-05 20:44:58--  https://www.dropbox.com/s/5cy0bnw2g62k0w1/WhiteoakBayou.csv?dl=0\n",
+      "Resolving www.dropbox.com (www.dropbox.com)... 162.125.8.1, 2620:100:601b:1::a27d:801\n",
+      "Connecting to www.dropbox.com (www.dropbox.com)|162.125.8.1|:443... connected.\n",
+      "HTTP request sent, awaiting response... 301 Moved Permanently\n",
+      "Location: /s/raw/5cy0bnw2g62k0w1/WhiteoakBayou.csv [following]\n",
+      "--2019-03-05 20:44:58--  https://www.dropbox.com/s/raw/5cy0bnw2g62k0w1/WhiteoakBayou.csv\n",
+      "Reusing existing connection to www.dropbox.com:443.\n",
+      "HTTP request sent, awaiting response... 302 Found\n",
+      "Location: https://ucc2e8bae94eb74ac58e8216481c.dl.dropboxusercontent.com/cd/0/inline/AchA8wdaMmeH3XJL85MQh-VsjCwoN6YE2GvBFncUN0NFQx48dPcP3UtXRHmEabCirgCcvZCd7tZJEsV0X79_QmiMkC4FgrVUb7ww140peuRnz7RuiD3F0S0eV_oipFIDUZ4/file# [following]\n",
+      "--2019-03-05 20:44:58--  https://ucc2e8bae94eb74ac58e8216481c.dl.dropboxusercontent.com/cd/0/inline/AchA8wdaMmeH3XJL85MQh-VsjCwoN6YE2GvBFncUN0NFQx48dPcP3UtXRHmEabCirgCcvZCd7tZJEsV0X79_QmiMkC4FgrVUb7ww140peuRnz7RuiD3F0S0eV_oipFIDUZ4/file\n",
+      "Resolving ucc2e8bae94eb74ac58e8216481c.dl.dropboxusercontent.com (ucc2e8bae94eb74ac58e8216481c.dl.dropboxusercontent.com)... 162.125.65.6, 2620:100:6021:6::a27d:4106\n",
+      "Connecting to ucc2e8bae94eb74ac58e8216481c.dl.dropboxusercontent.com (ucc2e8bae94eb74ac58e8216481c.dl.dropboxusercontent.com)|162.125.65.6|:443... connected.\n",
+      "HTTP request sent, awaiting response... 200 OK\n",
+      "Length: 32786 (32K) [text/plain]\n",
+      "Saving to: ‘WhiteoakBayou.csv?dl=0’\n",
+      "\n",
+      "100%[======================================>] 32,786      --.-K/s   in 0.1s    \n",
+      "\n",
+      "2019-03-05 20:44:59 (292 KB/s) - ‘WhiteoakBayou.csv?dl=0’ saved [32786/32786]\n",
+      "\n"
+     ]
+    }
+   ],
+   "source": [
+    "!wget 'https://www.dropbox.com/s/5cy0bnw2g62k0w1/WhiteoakBayou.csv?dl=0'"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "HuntingBayou.csv  WhiteoakBayou.csv\r\n"
+     ]
+    }
+   ],
+   "source": [
+    "!mv WhiteoakBayou.csv?dl=0 WhiteoakBayou.csv\n",
+    "!ls"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### 2.3 Load data into a Pandas dataframe"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "whiteoak = pd.read_csv('WhiteoakBayou.csv')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### 2.4 Use pixiedust `display()` to  explore the schema and browse the data\n",
+    "\n",
+    "#### 2.4.1 Select _DataFrame Table_ icon in the display widget to see the data in tabular form\n",
+    "\n",
+    "![pixiedust dataframe icon](https://github.com/scottdangelo/houston-flood-2017/blob/master/doc/source/images/pixieDataFrameIcon.png)\n",
+    "\n",
+    "#### 2.4.2 Select the chart icon to pull down and choose `line chart`. Click the `Options` button, and then for `Keys` drag and drop `datetime` and for `Values` drag and drop `Discharge`. This will display the water discharge at this stream gauge in cubic feet per second.\n",
+    "\n",
+    "![pixie choose line chart](https://github.com/scottdangelo/houston-flood-2017/blob/master/doc/source/images/pixieChooseLineChart.png)\n",
+    "\n",
+    "![pixie options datetime discharge](https://github.com/scottdangelo/houston-flood-2017/blob/master/doc/source/images/pixieOptionsDatetimeDischarge.png)\n",
+    "\n",
+    "#### 2.4.3 Look at the diferences in the display of the graph when the `Renderer` is switched from `matplotlib` to `bokeh`. (Note that `brunel` will throw an error)\n",
+    "\n",
+    "![pixie change renderer](https://github.com/scottdangelo/houston-flood-2017/blob/master/doc/source/images/pixieChangeRenderer.png)\n",
+    "\n",
+    "#### 2.4.4  Click the `Options` button, and then for `Keys` drag and drop `datetime` and for `Values` drag and drop `Gauge_Height`. This will display the height of the water at this stream gauge, in feet.\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {
+    "pixiedust": {
+     "displayParams": {
+      "chartsize": "100",
+      "handlerId": "lineChart",
+      "keyFields": "datetime",
+      "mapboxtoken": "pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA",
+      "rendererId": "matplotlib",
+      "timeseries": "true",
+      "valueFields": "Gage_Height(feet)"
+     }
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<style type=\"text/css\">.pd_warning{display:none;}</style><div class=\"pd_warning\"><em>Hey, there's something awesome here! To see it, open this notebook outside GitHub, in a viewer like Jupyter</em></div>"
+      ],
+      "text/plain": [
+       "<IPython.core.display.HTML object>"
+      ]
+     },
+     "metadata": {
+      "pixieapp_metadata": null
+     },
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "display(whiteoak)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {
+    "pixiedust": {
+     "displayParams": {
+      "colorrampname": "Orange to Purple",
+      "handlerId": "mapView",
+      "keyFields": "latitude,longitude",
+      "mapboxtoken": "pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA",
+      "valueFields": "location_name,Discharge(cfs),Gage_Height(feet)"
+     }
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<style type=\"text/css\">.pd_warning{display:none;}</style><div class=\"pd_warning\"><em>Hey, there's something awesome here! To see it, open this notebook outside GitHub, in a viewer like Jupyter</em></div>"
+      ],
+      "text/plain": [
+       "<IPython.core.display.HTML object>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "display(whiteoak)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 32,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "--2019-03-04 22:51:10--  https://www.dropbox.com/s/smvfax2br0ez4bv/houston.geojson?dl=0\n",
+      "Resolving www.dropbox.com (www.dropbox.com)... 162.125.8.1, 2620:100:601b:1::a27d:801\n",
+      "Connecting to www.dropbox.com (www.dropbox.com)|162.125.8.1|:443... connected.\n",
+      "HTTP request sent, awaiting response... 301 Moved Permanently\n",
+      "Location: /s/raw/smvfax2br0ez4bv/houston.geojson [following]\n",
+      "--2019-03-04 22:51:10--  https://www.dropbox.com/s/raw/smvfax2br0ez4bv/houston.geojson\n",
+      "Reusing existing connection to www.dropbox.com:443.\n",
+      "HTTP request sent, awaiting response... 302 Found\n",
+      "Location: https://ucb5aa3231d428ba9a083d935362.dl.dropboxusercontent.com/cd/0/inline/Ace3OaGOa-MvTP-RRKl9R50cPRd34Jm06achR9AfHnKTNLQ2hj0RdykUelFesZWlvER5J-6rf36BU8KcPBC6XOKG3sNC8ITZBm2Vf4sDAPwjyt5dqwZzHp7QJZxm95SDX3E/file# [following]\n",
+      "--2019-03-04 22:51:11--  https://ucb5aa3231d428ba9a083d935362.dl.dropboxusercontent.com/cd/0/inline/Ace3OaGOa-MvTP-RRKl9R50cPRd34Jm06achR9AfHnKTNLQ2hj0RdykUelFesZWlvER5J-6rf36BU8KcPBC6XOKG3sNC8ITZBm2Vf4sDAPwjyt5dqwZzHp7QJZxm95SDX3E/file\n",
+      "Resolving ucb5aa3231d428ba9a083d935362.dl.dropboxusercontent.com (ucb5aa3231d428ba9a083d935362.dl.dropboxusercontent.com)... 162.125.8.6, 2620:100:601b:6::a27d:806\n",
+      "Connecting to ucb5aa3231d428ba9a083d935362.dl.dropboxusercontent.com (ucb5aa3231d428ba9a083d935362.dl.dropboxusercontent.com)|162.125.8.6|:443... connected.\n",
+      "HTTP request sent, awaiting response... 200 OK\n",
+      "Length: 942513 (920K) [text/plain]\n",
+      "Saving to: ‘houston.geojson?dl=0’\n",
+      "\n",
+      "100%[======================================>] 942,513     --.-K/s   in 0.008s  \n",
+      "\n",
+      "2019-03-04 22:51:11 (107 MB/s) - ‘houston.geojson?dl=0’ saved [942513/942513]\n",
+      "\n"
+     ]
+    }
+   ],
+   "source": [
+    "!wget \"https://www.dropbox.com/s/smvfax2br0ez4bv/houston.geojson?dl=0\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 34,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "fHuntingBayou.csv?dl=0\thouston.geojson   WhiteoakBayou.csv\r\n",
+      "foo.csv\t\t\tHuntingBayou.csv\r\n"
+     ]
+    }
+   ],
+   "source": [
+    "!mv houston.geojson?dl=0 houston.geojson\n",
+    "!ls"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {
+    "pixiedust": {
+     "displayParams": {}
+    }
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<style type=\"text/css\">.pd_warning{display:none;}</style><div class=\"pd_warning\"><em>Hey, there's something awesome here! To see it, open this notebook outside GitHub, in a viewer like Jupyter</em></div>"
+      ],
+      "text/plain": [
+       "<IPython.core.display.HTML object>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "from pixiedust.display.app import *\n",
+    "from pixiedust.apps.mapboxBase import MapboxBase\n",
+    "\n",
+    "@PixieApp\n",
+    "class HoustonDashboard(MapboxBase):\n",
+    "    def setup(self):\n",
+    "        self.mapJSONOptions = {\n",
+    "            \"keyFields\": \"latitude,longitude\",\n",
+    "            \"mapboxtoken\": \"pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA\",\n",
+    "            \"handlerId\": \"mapView\",\n",
+    "            \"valueFields\": \"location_name,Discharge(cfs),Gage_Height(feet)\",\n",
+    "            \"rendererId\": \"mapbox\",\n",
+    "            \"rowCount\": \"600\",\n",
+    "            \"kind\": \"choropleth-cluster\",\n",
+    "            \"timeseries\": \"false\",\n",
+    "            \"basemap\": \"light-v9\"\n",
+    "        }\n",
+    "\n",
+    "        self.setLayers([\n",
+    "        {\n",
+    "            \"name\": \"Houston Flood\",\n",
+    "            \"url\": \"https://www.dropbox.com/s/smvfax2br0ez4bv/houston.geojson?dl=0\",\n",
+    "            \"type\": \"LineString\"\n",
+    "        }\n",
+    "        ])\n",
+    "    def formatOptions(self,options):\n",
+    "        return ';'.join([\"{}={}\".format(key,value) for (key, value) in iteritems(options)])\n",
+    "\n",
+    "    @route()\n",
+    "    def mainScreen(self):\n",
+    "        return \"\"\"\n",
+    "<div class=\"well\">\n",
+    "    <center><span style=\"font-size:x-large\">Analyzing Houston Flood data with PixieDust</span></center>\n",
+    "</div>\n",
+    "<div class=\"row\">\n",
+    "    <div class=\"form-group col-sm-2\" style=\"padding-right:10px;\">\n",
+    "        <div><strong>Layers</strong></div>\n",
+    "        {% for layer in this.layers %}\n",
+    "        <div class=\"rendererOpt checkbox checkbox-primary\">\n",
+    "            <input type=\"checkbox\" pd_refresh=\"map{{prefix}}\" pd_script=\"self.toggleLayer({{loop.index0}})\">\n",
+    "            <label>{{layer[\"name\"]}}</label>\n",
+    "        </div>\n",
+    "        {%endfor%}\n",
+    "    </div>\n",
+    "    <div class=\"form-group col-sm-10\">\n",
+    "        <div id=\"map{{prefix}}\" pd_entity pd_options=\"{{this.formatOptions(this.mapJSONOptions)}}\"/>\n",
+    "    </div>\n",
+    "</div>\n",
+    "\"\"\"\n",
+    "\n",
+    "HoustonDashboard().run(whiteoak,runInDialog=\"false\")\n"
+   ]
+  }
+ ],
+ "metadata": {
+  "celltoolbar": "Edit Metadata",
+  "kernelspec": {
+   "display_name": "Python 3.5",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.5.5"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 1
+}
